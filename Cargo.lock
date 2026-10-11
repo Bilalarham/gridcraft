@@ -1427,6 +1427,7 @@ dependencies = [
  "image",
  "log",
  "muda",
+ "open",
  "rfd",
  "semver",
  "serde_json",
