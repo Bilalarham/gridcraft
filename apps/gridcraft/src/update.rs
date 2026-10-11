@@ -86,17 +86,40 @@ fn check_latest_release(silent_when_current: bool) -> Result<(), String> {
     let installer = download_installer(download_url, asset_size, digest)?;
     let process = std::process::Command::new("msiexec.exe").arg("/i").arg(&installer).spawn();
     match process {
-        Ok(mut child) => {
-            let path = installer.clone();
-            let _ = std::thread::Builder::new().name("gridcraft-update-cleanup".into()).spawn(move || {
-                let _ = child.wait();
-                let _ = std::fs::remove_file(path);
-            });
-            Ok(())
-        }
+        Ok(mut child) => match child.wait() {
+            Ok(status) if status.code() == Some(0) => {
+                let _ = std::fs::remove_file(&installer);
+                show_message(
+                    "GridCraft update complete",
+                    &format!("GridCraft {latest} was installed. Close and reopen GridCraft to use the updated version."),
+                );
+                Ok(())
+            }
+            Ok(status) if status.code() == Some(3010) => {
+                let _ = std::fs::remove_file(&installer);
+                show_message(
+                    "GridCraft update complete",
+                    &format!("GridCraft {latest} was installed. Windows needs to restart before the update is fully applied."),
+                );
+                Ok(())
+            }
+            Ok(status) => {
+                let code = status.code().map_or_else(|| "unknown".to_string(), |code| code.to_string());
+                Err(format!(
+                    "Windows Installer could not complete the GridCraft {latest} update (exit code {code}). The downloaded installer is still available here:\n\n{}\n\nSave your work, close GridCraft, and open that installer to try again.",
+                    installer.display()
+                ))
+            }
+            Err(error) => Err(format!(
+                "Windows Installer started but GridCraft could not read its result: {error}. The downloaded installer is still available here:\n\n{}",
+                installer.display()
+            )),
+        },
         Err(error) => {
-            let _ = std::fs::remove_file(&installer);
-            Err(format!("The installer downloaded, but Windows could not start it: {error}"))
+            Err(format!(
+                "The installer downloaded, but Windows could not start it: {error}. The file is still available here:\n\n{}",
+                installer.display()
+            ))
         }
     }
 }
