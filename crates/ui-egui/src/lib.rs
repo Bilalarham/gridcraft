@@ -117,6 +117,8 @@ pub struct Services {
     pub copy_html: Option<Box<dyn FnMut(&str, &str) -> Result<(), String>>>,
     /// Web: deliver a file to the user (name, bytes).
     pub download: Option<Box<dyn Fn(&str, &[u8])>>,
+    /// Desktop: open a generated print-ready PDF in the system PDF viewer.
+    pub print_pdf: Option<Box<dyn Fn(&[u8]) -> Result<(), String>>>,
     /// Web: start an asynchronous file pick; the bytes arrive later in `inbox`.
     pub open_async: Option<Box<dyn Fn()>>,
     /// Files delivered asynchronously (name, bytes), opened on the next frame.
@@ -238,10 +240,22 @@ impl SheetApp {
         }
         let r = self.session.run(id, params);
         self.after_engine();
-        if id == "file.exportPdf"
-            && let Ok(r) = &r
+        if (id == "file.exportPdf" || id == "file.print")
+            && let Ok(result) = &r
         {
-            self.deliver_pdf(r);
+            if id == "file.print" {
+                if let Some(bytes) = result.get("base64").and_then(Json::as_str).and_then(gridcraft_engine::io::base64_decode) {
+                    if let Some(print_pdf) = &self.services.print_pdf {
+                        if let Err(error) = print_pdf(&bytes) {
+                            return Err(format!("couldn't open the print-ready PDF: {error}"));
+                        }
+                    } else {
+                        self.deliver_pdf(result);
+                    }
+                }
+            } else {
+                self.deliver_pdf(result);
+            }
         }
         r
     }
@@ -263,7 +277,7 @@ impl SheetApp {
         ctx.copy_text(text.to_string());
     }
 
-    /// Web: `file.exportPdf` without a path returns the PDF as base64; hand it to the browser as a download.
+    /// Web: export and print commands without a path return base64; hand the PDF to the browser as a download.
     fn deliver_pdf(&self, result: &Json) {
         if result.get("path").is_some() {
             return;

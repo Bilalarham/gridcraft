@@ -186,7 +186,13 @@ fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
     let document = window.document().ok_or("no document")?;
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
     let opts = web_sys::BlobPropertyBag::new();
-    opts.set_type(if name.ends_with(".csv") { "text/csv" } else { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    opts.set_type(if name.ends_with(".pdf") {
+        "application/pdf"
+    } else if name.ends_with(".csv") {
+        "text/csv"
+    } else {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(js)?;
     let a: web_sys::HtmlAnchorElement = document.create_element("a").map_err(js)?.dyn_into().map_err(|_| "not an anchor")?;

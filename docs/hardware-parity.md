@@ -1,6 +1,6 @@
 # Hardware parity
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** major (created from a source audit) · **Target:** Microsoft Excel (Microsoft 365), Excel for Mac 16.113.4
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (desktop Print opens a PDF in the system viewer) · **Target:** Microsoft Excel (Microsoft 365), Excel for Mac 16.113.4
 
 The hardware Excel uses, per platform, against GridCraft. Part of
 [target-app-parity.md](target-app-parity.md). **Hardware: ~40% ready, 25–40 h** (estimated).
@@ -14,10 +14,11 @@ The hardware Excel uses, per platform, against GridCraft. Part of
 | Multiple windows and monitors | One window per workbook, New Window for the same workbook, per-monitor DPI | One window; multiple workbooks switch inside it (#162; PR #171) | Native window per workbook, New Window, Arrange All across monitors: 6–8 h |
 | High-DPI and display scaling | yes | yes (display scale matched to desktop density) | — |
 | Accessibility hardware (screen readers, braille displays, switch control) | Narrator, JAWS, NVDA, VoiceOver | AccessKit enabled in eframe; grid cells and ribbon not yet exposed as an accessible tree | Counted under UI ([ui-parity.md](ui-parity.md)) |
-| Printers | System print with driver options | Desktop prints through the system dialog via PDF; web exports only | Counted under print |
+| Printers | System print with driver options | Desktop opens a print-ready PDF in the system PDF viewer; web downloads it | Choose printer options in the PDF viewer; no in-app printer selection. Counted under print |
 
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | minor | Desktop Print now opens a generated PDF in the system viewer; printer options remain in that viewer |
 | 2026-10-10 | major | Created: single-threaded calc, wgpu rendering, no pen pressure, single window |

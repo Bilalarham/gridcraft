@@ -150,6 +150,7 @@ fn services() -> Services {
                 .save_file()
                 .and_then(|p| p.to_str().map(str::to_string))
         })),
+        print_pdf: Some(Box::new(open_print_pdf)),
         open_url: Some(Box::new(|url: &str| {
             let cmd = if cfg!(target_os = "macos") {
                 "open"
@@ -162,6 +163,36 @@ fn services() -> Services {
         })),
         ..Default::default()
     }
+}
+
+/// Open a generated print-ready PDF in the system's default PDF viewer.
+fn open_print_pdf(bytes: &[u8]) -> Result<(), String> {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT_PRINT_FILE: AtomicU64 = AtomicU64::new(0);
+
+    let temp = std::env::temp_dir();
+    for _ in 0..8 {
+        let sequence = NEXT_PRINT_FILE.fetch_add(1, Ordering::Relaxed);
+        let path = temp.join(format!("gridcraft-print-{}-{sequence}.pdf", std::process::id()));
+        let mut file = match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(format!("couldn't create temporary print file: {error}")),
+        };
+        use std::io::Write as _;
+        if let Err(error) = file.write_all(bytes) {
+            let _ = std::fs::remove_file(&path);
+            return Err(format!("couldn't write temporary print file: {error}"));
+        }
+        match open::that(&path) {
+            Ok(()) => return Ok(()),
+            Err(error) => {
+                let _ = std::fs::remove_file(&path);
+                return Err(format!("couldn't open the system PDF viewer: {error}"));
+            }
+        }
+    }
+    Err("couldn't allocate a unique temporary print file".into())
 }
 
 fn icon() -> Option<egui::IconData> {
