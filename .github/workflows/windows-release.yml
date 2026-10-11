@@ -1,0 +1,73 @@
+name: Windows release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version from Cargo.toml, for example 0.5.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64:
+    name: Build Windows x64 installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+
+      - name: Check release version
+        env:
+          RELEASE_INPUT: ${{ inputs.version }}
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            $env:RELEASE_INPUT
+          } else {
+            $env:GITHUB_REF_NAME -replace '^v', ''
+          }
+          $inPackage = $false
+          $manifestVersion = $null
+          foreach ($line in Get-Content Cargo.toml) {
+            if ($line -match '^\s*\[') {
+              $inPackage = ($line.Trim() -eq '[workspace.package]')
+              continue
+            }
+            if ($inPackage -and $line -match '^\s*version\s*=\s*"([^"]+)"') {
+              $manifestVersion = $Matches[1]
+              break
+            }
+          }
+          if (-not $manifestVersion -or $version -ne $manifestVersion) {
+            throw "Release version '$version' must match workspace Cargo.toml version '$manifestVersion'."
+          }
+          "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          "DIST=$pwd\dist\release" >> $env:GITHUB_ENV
+
+      - name: Install WiX 5
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+
+      - name: Build installer and portable package
+        shell: pwsh
+        run: ./packaging/windows/package.ps1 -Arch x64
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = "v$env:RELEASE_VERSION"
+          gh release create $tag `
+            "$env:DIST\gridcraft-$env:RELEASE_VERSION-windows-x64.msi" `
+            "$env:DIST\gridcraft-$env:RELEASE_VERSION-windows-x64-portable.zip" `
+            --title "GridCraft $env:RELEASE_VERSION" `
+            --generate-notes
