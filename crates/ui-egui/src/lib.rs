@@ -112,6 +112,8 @@ pub struct Services {
     /// insert into a subsequent dialog or open the image as a workbook.
     pub pick_picture_async: Option<Box<dyn Fn(Inbox)>>,
     pub open_url: Option<Box<dyn Fn(&str)>>,
+    /// Desktop: check the configured release channel and offer its Windows installer.
+    pub check_updates: Option<Box<dyn Fn()>>,
     /// Publish HTML and its plain-text alternative together. `Ok` means the host owns the
     /// write (including any asynchronous fallback); an immediate error uses egui's text path.
     pub copy_html: Option<Box<dyn FnMut(&str, &str) -> Result<(), String>>>,

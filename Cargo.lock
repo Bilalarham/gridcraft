@@ -1428,6 +1428,7 @@ dependencies = [
  "log",
  "muda",
  "rfd",
+ "semver",
  "serde_json",
  "winresource",
 ]

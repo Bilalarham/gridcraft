@@ -2,6 +2,7 @@ name: Windows release
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
@@ -11,12 +12,27 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  windows-check:
+    if: github.ref_type == 'branch'
+    name: Check Windows build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+
+      - name: Check desktop app
+        run: cargo check --locked -p gridcraft
+
   windows-x64:
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     name: Build Windows x64 installer
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

@@ -689,7 +689,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
                     ui.add_space(4.0);
                     ui.label(format!("{} engine commands are available. See docs/mcp.md and docs/control-protocol.md.", gridcraft_engine::command_specs().len()));
                 }
-                "about" => about(ui, &mut d),
+                "about" => about(app, ui, &mut d),
                 "journal" => {
                     egui::ScrollArea::vertical().max_height(360.0).show(ui, |ui| {
                         for (id, p) in app.session.journal.iter().rev().take(500) {
@@ -1027,7 +1027,7 @@ fn form(ui: &mut egui::Ui, d: &mut Dialog, confirm: &mut bool, open: &mut bool) 
 
 /// Help ▸ About GridCraft: the app, its contributors and the AI models that helped. The credits
 /// are compiled in (`crate::credits`, docs/contributors.md).
-fn about(ui: &mut egui::Ui, d: &mut Dialog) {
+fn about(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dialog) {
     ui.horizontal(|ui| {
         for tab in ["About", "Contributors", "Models"] {
             if ui.selectable_label(d.tab == tab, tab).clicked() {
@@ -1044,6 +1044,11 @@ fn about(ui: &mut egui::Ui, d: &mut Dialog) {
             ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
             ui.add_space(4.0);
             ui.label("A clean-room, open-source, Rust-native spreadsheet. Part of ArtCraft.");
+            if let Some(check_updates) = &app.services.check_updates {
+                if ui.button("Check for updates").clicked() {
+                    check_updates();
+                }
+            }
             ui.hyperlink_to("getartcraft.com/apps/gridcraft", "https://getartcraft.com/apps/gridcraft");
             ui.hyperlink_to("Join the ArtCraft Discord", "https://discord.gg/artcraft");
         }

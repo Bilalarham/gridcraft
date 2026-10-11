@@ -28,6 +28,9 @@ winresource = "0.1"
 rfd = { workspace = true }
 arboard = { workspace = true }
 
+[target.'cfg(target_os = "windows")'.dependencies]
+semver = "1"
+
 [target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
 arboard = { workspace = true, features = ["wayland-data-control"] }
 

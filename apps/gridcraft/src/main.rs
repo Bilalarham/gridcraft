@@ -8,6 +8,9 @@
 #![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+#[cfg(target_os = "windows")]
+mod update;
+
 #[cfg(target_os = "macos")]
 mod apple_events;
 mod control_server;
@@ -21,7 +24,12 @@ use gridcraft_engine::Session;
 use gridcraft_ui_egui::{Services, SheetApp};
 use serde_json::json;
 
-struct App(SheetApp, #[cfg(target_os = "macos")] Option<native_menu::NativeMenu>, #[cfg(target_os = "macos")] fmv_macos_events::Inbox);
+struct App(
+    SheetApp,
+    #[cfg(target_os = "macos")] Option<native_menu::NativeMenu>,
+    #[cfg(target_os = "macos")] fmv_macos_events::Inbox,
+    #[cfg(target_os = "windows")] bool,
+);
 
 impl eframe::App for App {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -34,6 +42,13 @@ impl eframe::App for App {
                 m.poll(&mut self.0, ctx);
             }
             apple_events::poll(&self.2, &mut self.0, ctx);
+        }
+        #[cfg(target_os = "windows")]
+        if !self.1 {
+            self.1 = true;
+            if prefs_enabled() {
+                update::check_for_updates_on_startup();
+            }
         }
         self.0.logic(ctx);
     }
@@ -161,6 +176,8 @@ fn services() -> Services {
             };
             let _ = std::process::Command::new(cmd).arg(url).spawn();
         })),
+        #[cfg(target_os = "windows")]
+        check_updates: Some(Box::new(update::check_for_updates)),
         ..Default::default()
     }
 }
@@ -321,6 +338,8 @@ fn main() -> eframe::Result<()> {
                 None,
                 #[cfg(target_os = "macos")]
                 apple_events.connect(&cc.egui_ctx),
+                #[cfg(target_os = "windows")]
+                false,
             )))
         }),
     )
