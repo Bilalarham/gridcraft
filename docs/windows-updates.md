@@ -16,8 +16,8 @@ This is an assisted update, not a silent install.
 
 1. Change `[workspace.package].version` in the root `Cargo.toml` and commit the change.
 2. Push that commit to the fork.
-3. Create and push a tag with the same version prefixed by `v`, for example `v0.5.2` when the
-   workspace version is `0.5.2`.
+3. Create and push a tag with the same version prefixed by `v`, for example `v0.5.3` when the
+   workspace version is `0.5.3`.
 4. GitHub Actions builds the Windows x64 MSI and portable ZIP, then publishes a GitHub Release.
 
 The first release is also required before the updater can find an installer. An existing installation

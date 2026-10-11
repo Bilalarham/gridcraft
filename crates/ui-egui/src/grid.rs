@@ -1627,8 +1627,19 @@ fn select_ranges(app: &mut SheetApp, r: RangeRef, add: bool, active: CellRef) {
     let _ = app.session.run("selection.set", json!({"range": ranges.join(","), "active": active.a1()}));
 }
 
-/// Grid keyboard handling when no text field has focus.
+/// Global shortcuts and grid keyboard handling when no text field has focus.
 fn keyboard(app: &mut SheetApp, ctx: &egui::Context, resp: &egui::Response, geo: &Geo, sh: &Sheet) {
+    let events = ctx.input(|i| i.events.clone());
+    let print_shortcut = events.iter().any(|event| match event {
+        egui::Event::Key { key, pressed: true, modifiers, .. } => *key == egui::Key::P && modifiers.command,
+        _ => false,
+    });
+    if print_shortcut && app.dialog.is_none() && app.message.is_none() {
+        // Print is an application-wide shortcut, including while the formula bar or a cell
+        // editor has focus, as it is in spreadsheet applications.
+        app.run_or_alert("file.print", json!({}));
+        return;
+    }
     // Focus left on an editor that no longer exists goes back to the grid.
     let stale = [egui::Id::new("gridcraft.cell_editor"), egui::Id::new("gridcraft.formula_bar"), crate::text_box::editor_id()];
     let editing = app.editor.is_some() || app.text_box_editor.is_some();
@@ -1646,7 +1657,6 @@ fn keyboard(app: &mut SheetApp, ctx: &egui::Context, resp: &egui::Response, geo:
     ctx.memory_mut(|m| {
         m.set_focus_lock_filter(resp.id, egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: true })
     });
-    let events = ctx.input(|i| i.events.clone());
     let page = ((geo.cells.height() / geo.z) / sh.default_row_height).floor().max(1.0) as i64;
     for ev in events {
         match ev {
