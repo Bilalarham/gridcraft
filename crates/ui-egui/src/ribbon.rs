@@ -1709,6 +1709,12 @@ fn view(app: &mut SheetApp, ui: &mut Ui) {
 }
 
 fn automate(app: &mut SheetApp, ui: &mut Ui) {
+    if app.services.check_updates.is_some()
+        && big_button(ui, Icon::Script, "Check for\nUpdates", "Check GitHub for a newer GridCraft version", false).clicked()
+        && let Some(check_updates) = &app.services.check_updates
+    {
+        check_updates();
+    }
     if big_button(ui, Icon::Script, "Command\nPalette", "Search and run any command", false).clicked() {
         app.open_dialog("commandSearch", json!({}));
     }

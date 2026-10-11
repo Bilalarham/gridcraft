@@ -182,7 +182,8 @@ fn services() -> Services {
     }
 }
 
-/// Open a generated print-ready PDF in the system's default PDF viewer.
+/// Send a generated print-ready PDF to the Windows default printer, or open it for printing on
+/// other desktop platforms.
 fn open_print_pdf(bytes: &[u8]) -> Result<(), String> {
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT_PRINT_FILE: AtomicU64 = AtomicU64::new(0);
@@ -201,6 +202,20 @@ fn open_print_pdf(bytes: &[u8]) -> Result<(), String> {
             let _ = std::fs::remove_file(&path);
             return Err(format!("couldn't write temporary print file: {error}"));
         }
+        #[cfg(target_os = "windows")]
+        {
+            match print_with_windows_default_app(&path) {
+                Ok(()) => return Ok(()),
+                Err(print_error) => match open::that(&path) {
+                    Ok(()) => return Err(format!("Windows could not print directly. The PDF is open; press Ctrl+P to print it.\n\n{print_error}")),
+                    Err(open_error) => {
+                        let _ = std::fs::remove_file(&path);
+                        return Err(format!("couldn't print the PDF ({print_error}) or open it ({open_error})"));
+                    }
+                },
+            }
+        }
+        #[cfg(not(target_os = "windows"))]
         match open::that(&path) {
             Ok(()) => return Ok(()),
             Err(error) => {
@@ -210,6 +225,25 @@ fn open_print_pdf(bytes: &[u8]) -> Result<(), String> {
         }
     }
     Err("couldn't allocate a unique temporary print file".into())
+}
+
+#[cfg(target_os = "windows")]
+fn print_with_windows_default_app(path: &std::path::Path) -> Result<(), String> {
+    let output = std::process::Command::new("powershell.exe")
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "try { Start-Process -FilePath $env:GRIDCRAFT_PRINT_PATH -Verb Print -ErrorAction Stop | Out-Null; exit 0 } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }",
+        ])
+        .env("GRIDCRAFT_PRINT_PATH", path)
+        .output()
+        .map_err(|error| format!("couldn't start Windows printing: {error}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!("Windows could not send the PDF to the default printer: {}", String::from_utf8_lossy(&output.stderr).trim()))
+    }
 }
 
 fn icon() -> Option<egui::IconData> {

@@ -15,13 +15,13 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package
       Name="GridCraft"
-      Manufacturer="Learning Machines LLC"
+      Manufacturer="Arham Tech Solution"
       Version="$(var.Version)"
       UpgradeCode="5511327B-F305-41BE-92D0-EB84944E7C4D"
       Scope="perMachine"
       Compressed="yes"
       Language="1033">
-    <SummaryInformation Description="GridCraft spreadsheet" Manufacturer="Learning Machines LLC" />
+    <SummaryInformation Description="GridCraft spreadsheet by Arham Tech Solution" Manufacturer="Arham Tech Solution" />
     <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
          (MSI versions are numeric, so 1.2.3-rc.1 and 1.2.3-rc.2 are both 1.2.3). -->
     <MajorUpgrade AllowSameVersionUpgrades="yes"
@@ -30,9 +30,9 @@
 
     <Icon Id="GridcraftIcon.ico" SourceFile="$(var.IconPath)" />
     <Property Id="ARPPRODUCTICON" Value="GridcraftIcon.ico" />
-    <Property Id="ARPURLINFOABOUT" Value="https://getartcraft.com/apps/gridcraft" />
-    <Property Id="ARPURLUPDATEINFO" Value="https://getartcraft.com/apps/gridcraft" />
-    <Property Id="ARPHELPLINK" Value="https://discord.gg/artcraft" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Bilalarham/gridcraft" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/Bilalarham/gridcraft/releases" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/Bilalarham/gridcraft/issues" />
 
     <!-- An explicit command-line value wins. Otherwise retain the previous installation's
          choice, defaulting to off for a fresh install. Run only in the first sequence so the

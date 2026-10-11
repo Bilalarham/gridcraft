@@ -1043,14 +1043,8 @@ fn about(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dialog) {
             ui.heading("GridCraft");
             ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
             ui.add_space(4.0);
-            ui.label("A clean-room, open-source, Rust-native spreadsheet. Part of ArtCraft.");
-            if let Some(check_updates) = &app.services.check_updates {
-                if ui.button("Check for updates").clicked() {
-                    check_updates();
-                }
-            }
-            ui.hyperlink_to("getartcraft.com/apps/gridcraft", "https://getartcraft.com/apps/gridcraft");
-            ui.hyperlink_to("Join the ArtCraft Discord", "https://discord.gg/artcraft");
+            ui.label("An open-source spreadsheet, maintained by Arham Tech Solution.");
+            ui.hyperlink_to("Arham Tech Solution on GitHub", "https://github.com/Bilalarham/gridcraft");
         }
     }
 }
